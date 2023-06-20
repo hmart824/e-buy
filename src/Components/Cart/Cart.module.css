@@ -1,0 +1,24 @@
+.container{
+    display: flex;
+    position: relative;
+    flex-wrap: wrap;
+    gap: 1rem;
+    min-height: 81vh;
+    padding-top: 1rem !important;
+    padding: 0 1rem;
+}
+.price{
+    height: 2.4rem;
+    min-width: 7rem;
+    margin: 0;
+    text-align: center;
+    justify-content: center;
+    display: flex;
+    align-items: center;
+    padding: 0 0.4rem;
+    font-size: 1.3rem;
+    background-color: #e5e500;
+    font-weight: bolder;
+    letter-spacing: .1rem;
+    border-radius: 0.4rem;
+}

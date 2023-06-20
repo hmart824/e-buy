@@ -8,8 +8,7 @@ function Home() {
     const {products , fetchProducts} = useContextValue();
     useEffect(() => {
         fetchProducts();
-    }, [])
-    console.log(products)
+    }, []);
 
   return (
     <div className={Style.container}>
@@ -19,14 +18,7 @@ function Home() {
             Filter
         </button>
         {products?.map((product)=>{
-            return <Productitem 
-                    key={product.id} 
-                    title={product.title} 
-                    image={product.image}
-                    description={product.description}
-                    price={product.price}
-                    rating={product.rating}
-                    />
+            return <Productitem key={product.id} product={product}/>
         })}
     </div>
   )
