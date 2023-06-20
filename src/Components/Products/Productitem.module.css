@@ -1,0 +1,8 @@
+.item{
+    width: 16rem;
+    height: 31rem;
+}
+.img{
+    height: 16rem;
+    object-fit: contain;
+}

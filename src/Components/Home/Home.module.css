@@ -1,0 +1,14 @@
+.container{
+    display: flex;
+    position: relative;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding-top: 4rem !important;
+    padding: 0 1rem;
+}
+.btn{
+    position: absolute;
+    right: 4rem;
+    top: 1rem;
+}
