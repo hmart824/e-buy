@@ -20,7 +20,7 @@ function Cart() {
     </div>
       <div className="navbar sticky-bottom bg-body-tertiary" style={{bottom: '8px' , borderTop: '1px solid black' , borderBottom: '1px solid black'}}>
         <div className="container-fluid">
-          <p className={Style.price}>${total}</p>
+          <p className={Style.price}>${total.toFixed(2)}</p>
           <button className='btn btn-success btn-sm'>Purchase</button>
         </div>
       </div>

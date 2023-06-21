@@ -1,6 +1,5 @@
-import React from 'react';
+import React, { createContext , useContext , useReducer } from 'react';
 import axios from'axios';
-import { createContext , useContext , useReducer} from 'react';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
@@ -60,7 +59,6 @@ function CustomContext({children}) {
                     value: state.cart
                 }
             });
-            console.log();
         }else{
             dispatch({
                 type: 'ADD_DATA',
@@ -84,12 +82,58 @@ function CustomContext({children}) {
         toast.error('Item Removed successfully.')
     }
 
+    const handleIncrease = (id)=>{
+        let index = state.cart.findIndex((el)=> el.id === id);
+        if(index !== -1){
+            state.cart[index].qty++;
+            dispatch({
+                type: 'GET_DATA',
+                payload: {
+                    state: 'cart',
+                    value: state.cart
+                }
+            });
+            dispatch({
+                type: 'TOTAL',
+                payload:{
+                    state: 'total',
+                    value: state.total + state.cart[index].price
+                }
+            })
+        }
+        return;
+    }
+    const handleDecrease = (id)=>{
+        let index = state.cart.findIndex((el)=> el.id === id);
+        if(index !== -1){
+            state.cart[index].qty--;
+            dispatch({
+                type: 'TOTAL',
+                payload:{
+                    state: 'total',
+                    value: state.total - state.cart[index].price
+                }
+            })
+            if(state.cart[index].qty === 0){
+                state.cart.splice(index , 1);
+            }
+            dispatch({
+                type: 'GET_DATA',
+                payload: {
+                    state: 'cart',
+                    value: state.cart
+                }
+            });
+        }
+        return;
+
+    }
+
     const calcTotalPrice = (array)=>{
-        let total = 0;
-        array.forEach(element => {
-            total = total + (element.price * element.qty)
-        });
-        console.log(total);
+        const total = array.reduce((accum , currVal)=>{
+            let {price , qty} = currVal;
+            return accum + Number(price)*Number(qty);
+        } , 0);
         dispatch({
             type: 'TOTAL',
             payload:{
@@ -108,7 +152,9 @@ function CustomContext({children}) {
         toast,
         removeProduct,
         total: state.total,
-        calcTotalPrice
+        calcTotalPrice,
+        handleIncrease,
+        handleDecrease
     }}>
         <ToastContainer
             position="top-right"

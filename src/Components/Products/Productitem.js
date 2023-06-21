@@ -6,7 +6,7 @@ import { AiFillMinusCircle } from "react-icons/ai";
 import { useContextValue } from '../../Context/CustomContext';
 
 function Productitem(props) {
-  const {addToCart , removeProduct} = useContextValue();
+  const {addToCart , removeProduct , handleDecrease ,handleIncrease} = useContextValue();
   return (
     <div className={Style.item + " card"} style={props.product.in_cart && {height: '25rem'}}>
         <img src={props.product.image} className={Style.img + " card-img-top"} alt={props.product.title}/>
@@ -17,9 +17,9 @@ function Productitem(props) {
               ${props.product.price} 
               {props.product.in_cart ? 
                 <span className='mx-4'>
-                  <AiFillPlusCircle className='mx-2' style={{cursor: 'pointer'}}/>
+                  <AiFillMinusCircle onClick={()=> handleDecrease(props.product.id)} className='mx-2' style={{cursor: 'pointer'}}/>
                    {props.product.qty} 
-                  <AiFillMinusCircle className='mx-2' style={{cursor: 'pointer'}}/>
+                  <AiFillPlusCircle onClick={()=> handleIncrease(props.product.id)} className='mx-2' style={{cursor: 'pointer'}}/>
                 </span> :
                 <span className='mx-3' style={{fontSize: '1rem'}}>
                   {props.product.rating.rate} <AiFillStar style={{color:'#ffff00'}}/>
