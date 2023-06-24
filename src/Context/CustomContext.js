@@ -9,7 +9,7 @@ const reducer = (state , action)=>{
     const {payload} = action;
     switch(action.type){
         case "TOTAL":
-        case "GET_DATA":
+        case "SET_DATA":
             return {
                 ...state,
                 [payload.state]: payload.value
@@ -35,12 +35,41 @@ const useContextValue = ()=>{
 }
 
 function CustomContext({children}) {
-    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0});
+    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , filtered_products: [] , category: []});
+
+    const filterProducts = (query)=>{
+        let temp = [...state.products];
+        let tempProd;
+
+        if(typeof query === 'object'){
+                tempProd = query?.map((cat)=>{
+                let filterTemp = temp.filter((el)=> el.category === cat)
+                return filterTemp;
+            })
+            tempProd = tempProd.flat()
+        }
+
+        if(typeof query === 'string'){
+            state.filtered_products.length > 0 ?
+            temp = [...state.filtered_products] :
+            temp = [...state.products]
+            tempProd = temp.filter((el)=> el.title.toLowerCase().includes(query));
+            console.log(tempProd)
+        }
+
+        dispatch({
+            type: 'SET_DATA',
+            payload: {
+                state: 'filtered_products',
+                value: tempProd
+            }
+        })
+    }
 
     const fetchProducts = async()=>{
         const res = await axios.get('https://fakestoreapi.com/products');
         dispatch({
-            type: 'GET_DATA',
+            type: 'SET_DATA',
             payload: {
                 state: 'products',
                 value: res.data
@@ -53,7 +82,7 @@ function CustomContext({children}) {
         if(index > -1){
             state.cart[index].qty++;
             dispatch({
-                type: 'GET_DATA',
+                type: 'SET_DATA',
                 payload: {
                     state: 'cart',
                     value: state.cart
@@ -87,7 +116,7 @@ function CustomContext({children}) {
         if(index !== -1){
             state.cart[index].qty++;
             dispatch({
-                type: 'GET_DATA',
+                type: 'SET_DATA',
                 payload: {
                     state: 'cart',
                     value: state.cart
@@ -118,7 +147,7 @@ function CustomContext({children}) {
                 state.cart.splice(index , 1);
             }
             dispatch({
-                type: 'GET_DATA',
+                type: 'SET_DATA',
                 payload: {
                     state: 'cart',
                     value: state.cart
@@ -143,6 +172,20 @@ function CustomContext({children}) {
         })
     }
 
+    const getUniqueData = (itemArray , property)=>{
+        let data = itemArray.map((item)=>{
+            return item[property];
+        })
+        data = [...new Set(data)];
+        dispatch({
+            type: 'SET_DATA',
+            payload: {
+                state: property,
+                value: data
+            }
+        })
+    }
+
   return (
     <customContext.Provider value={{
         products: state.products,
@@ -154,7 +197,11 @@ function CustomContext({children}) {
         total: state.total,
         calcTotalPrice,
         handleIncrease,
-        handleDecrease
+        handleDecrease,
+        getUniqueData,
+        category: state.category,
+        filterProducts,
+        filtered_products: state.filtered_products
     }}>
         <ToastContainer
             position="top-right"
