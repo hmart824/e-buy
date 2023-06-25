@@ -3,6 +3,10 @@ import axios from'axios';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import db , { auth } from '../Firbase/Firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword , updateProfile , onAuthStateChanged , signOut} from "firebase/auth";
+import { collection , addDoc, getDocs , setDoc , doc} from 'firebase/firestore';
+
 const customContext = createContext();
 
 const reducer = (state , action)=>{
@@ -35,7 +39,109 @@ const useContextValue = ()=>{
 }
 
 function CustomContext({children}) {
-    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , filtered_products: [] , category: []});
+    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , filtered_products: [] , category: [] , user: null , loading: false});
+
+    const signUpWithEmailAndPassword = (data)=>{
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        createUserWithEmailAndPassword(auth , data.email , data.password)
+        .then(async(userCredential)=>{
+            console.log('signed up successfully!!')
+            await updateProfile(userCredential.user , {
+                displayName: data.name
+            });
+            const currentUser = {
+                displayName: userCredential.user.displayName,
+                email: userCredential.user.email,
+                photoURL: userCredential.user.photoURL,
+                userId: userCredential.user.uid,
+                password: data.password
+            }
+            const userDocRef = doc(db , "users" , currentUser.email);
+            setDoc(userDocRef , currentUser);
+            dispatch({
+                type: 'SET_DATA' , 
+                payload: {
+                  state: 'user',
+                  value: currentUser
+                }});
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+        })
+        .catch((error) => {
+            const errorMessage = error.message;
+            console.log(errorMessage);
+            toast.error('Invalid Credentials!!')
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+        });
+        
+    }
+
+    const signIn = (data)=>{
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        const message = signInWithEmailAndPassword(auth , data.email , data.password)
+        .then((userCredential)=>{
+            const currentUser = {
+                displayName: userCredential.user.displayName,
+                email: userCredential.user.email,
+                photoURL: userCredential.user.photoURL,
+                userId: userCredential.user.uid,
+                password: data.password
+            }
+            dispatch({
+                type: 'SET_DATA' , 
+                payload: {
+                  state: 'user',
+                  value: currentUser
+                }});
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+        })
+        .catch((error) => {
+            const errorMessage = error.message;
+            toast.error('Invalid Credentials!!')
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+            return errorMessage;
+        });
+        return message;
+    }
+
+    const authentication = ()=>{
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        onAuthStateChanged(auth, (currentUser) => {
+           if (currentUser) {
+            const user = {
+                displayName: currentUser.displayName,
+                email: currentUser.email,
+                photoURL: currentUser.photoURL,
+                userId: currentUser.uid,
+            }
+            dispatch({
+                type: 'SET_DATA' , 
+                payload: {
+                  state: 'user',
+                  value: user
+                }});
+             console.log('usersigned in');
+           }else{
+             console.log("user signed out");
+           }
+           dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+         });
+    
+    }
+
+    const signout = ()=>{
+        signOut(auth)
+        .then(()=>{
+          console.log('signed out successfully');
+          dispatch({
+            type: 'SET_DATA',
+            payload: {
+              state: 'user',
+              value: null
+            }
+           })
+        })
+        .catch((err)=>{alert(err.message)})
+      }
 
     const filterProducts = (query)=>{
         let temp = [...state.products];
@@ -66,6 +172,7 @@ function CustomContext({children}) {
     }
 
     const fetchProducts = async()=>{
+        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         const res = await axios.get('https://fakestoreapi.com/products');
         dispatch({
             type: 'SET_DATA',
@@ -74,6 +181,7 @@ function CustomContext({children}) {
                 value: res.data
             }
         })
+        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
     };
 
     const addToCart = (product)=>{
@@ -213,7 +321,13 @@ function CustomContext({children}) {
         filterProducts,
         filtered_products: state.filtered_products,
         clearInputs,
-        onChangeHandler
+        onChangeHandler,
+        signUpWithEmailAndPassword,
+        authentication,
+        user: state.user,
+        signout,
+        loading: state.loading,
+        signIn
     }}>
         <ToastContainer
             position="top-right"

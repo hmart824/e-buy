@@ -7,8 +7,12 @@ import Myorders from './Components/Orders/Myorders';
 import Cart from './Components/Cart/Cart';
 import Login from './Components/Login/Login';
 import SignUp from './Components/Login/SignUp';
+import { useEffect } from 'react';
+import { useContextValue } from './Context/CustomContext';
 
 function App() {
+
+  const { authentication , loading} = useContextValue();
 
   const router = createBrowserRouter([
     { path: '/', 
@@ -22,6 +26,11 @@ function App() {
       ]
     }
   ])
+
+  useEffect(() => {
+    authentication();
+   },[])
+  
 
   return (
     <>

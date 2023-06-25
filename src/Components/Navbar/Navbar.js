@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
 import { Link , Outlet , useNavigate } from 'react-router-dom';
 import { useContextValue } from '../../Context/CustomContext';
+import Loader from '../Loader/Loader';
 
 function Navbar() {
-    const {filterProducts} = useContextValue();
+    const {filterProducts , user , signout , loading} = useContextValue();
     const navigate = useNavigate();
     const [searchText, setSearchText] = useState('');
 
@@ -27,12 +28,12 @@ function Navbar() {
                     <li className="nav-item">
                         <Link className="nav-link active" aria-current="page" to="/">Home</Link>
                     </li>
-                    <li className="nav-item">
+                    {user && <li className="nav-item">
                         <Link className="nav-link" to="/orders">My Orders</Link>
-                    </li>
-                    <li className="nav-item">
+                    </li>}
+                    {user && <li className="nav-item">
                         <Link className="nav-link" to='/cart'>Cart</Link>
-                    </li>
+                    </li>}
                 </ul>
                 <form className="d-flex" role="search">
                     <input className="form-control me-2" type="search" placeholder="Search by Name" aria-label="Search"
@@ -40,13 +41,16 @@ function Navbar() {
                         onKeyUp={handleSearch}
                     />
                 </form>
-                <button type="button" className="btn btn-sm btn-outline-success" onClick={()=> navigate('/signin')}>
-                    Sign In
+                <button type="button" className="btn btn-sm btn-outline-success"
+                onClick={()=> {
+                    user ? signout() : navigate('/signin')
+                }}>
+                    {user ? 'Sign Out' : "Sign In"}
                 </button>
             </div>
         </div>
     </nav>
-    <Outlet/>
+    {loading ? <Loader/> : <Outlet/>}
     </>
   )
 }

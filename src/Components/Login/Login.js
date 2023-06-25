@@ -5,13 +5,18 @@ import { useContextValue } from '../../Context/CustomContext';
 
 const Login = () => {
     const navigate = useNavigate();
-    const {clearInputs , onChangeHandler} = useContextValue();
+    const {clearInputs , onChangeHandler , signIn} = useContextValue();
     const [signInData, setSignInData] = useState({});
 
-    const handleSubmit = (e)=>{
+    const handleSubmit = async(e)=>{
         e.preventDefault();
-        console.log(signInData);
+        const error = await signIn(signInData);
         clearInputs('sign-in-inp');
+        console.log('---->',error)
+        if(!error){
+          console.log('active')
+          navigate('/');
+        }
     }
   return (
     <div className={Style.container}>
