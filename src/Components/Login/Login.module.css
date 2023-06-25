@@ -1,0 +1,17 @@
+.container{
+    height: calc(100vh - 4rem);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.container form{
+    border: 1px solid black;
+    height: 20rem;
+    width: 17rem;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem 0.5rem 0 0.5rem;
+    gap: 1rem;
+    background-color: rgb(245 245 245);
+    border-radius: 0.6rem;
+}

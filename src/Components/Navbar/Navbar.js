@@ -1,9 +1,10 @@
 import React, { useState } from 'react';
-import { Link , Outlet} from 'react-router-dom';
+import { Link , Outlet , useNavigate } from 'react-router-dom';
 import { useContextValue } from '../../Context/CustomContext';
 
 function Navbar() {
     const {filterProducts} = useContextValue();
+    const navigate = useNavigate();
     const [searchText, setSearchText] = useState('');
 
     const handleSearch = ()=>{
@@ -39,6 +40,9 @@ function Navbar() {
                         onKeyUp={handleSearch}
                     />
                 </form>
+                <button type="button" className="btn btn-sm btn-outline-success" onClick={()=> navigate('/signin')}>
+                    Sign In
+                </button>
             </div>
         </div>
     </nav>

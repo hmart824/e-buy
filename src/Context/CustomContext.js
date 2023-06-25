@@ -50,11 +50,10 @@ function CustomContext({children}) {
         }
 
         if(typeof query === 'string'){
-            state.filtered_products.length > 0 ?
-            temp = [...state.filtered_products] :
-            temp = [...state.products]
+            // state.filtered_products.length > 0 ?
+            // temp = [...state.filtered_products] :
+            // temp = [...state.products]
             tempProd = temp.filter((el)=> el.title.toLowerCase().includes(query));
-            console.log(tempProd)
         }
 
         dispatch({
@@ -186,6 +185,17 @@ function CustomContext({children}) {
         })
     }
 
+    const onChangeHandler = (target ,state, setState)=>{
+        setState({...state , [target.name] : target.value});
+    }
+
+    const clearInputs = (className)=>{
+        let lists = document.getElementsByClassName(className);
+        Array.from(lists).forEach((el)=>{
+            el.value = '';
+        })
+    }
+
   return (
     <customContext.Provider value={{
         products: state.products,
@@ -201,7 +211,9 @@ function CustomContext({children}) {
         getUniqueData,
         category: state.category,
         filterProducts,
-        filtered_products: state.filtered_products
+        filtered_products: state.filtered_products,
+        clearInputs,
+        onChangeHandler
     }}>
         <ToastContainer
             position="top-right"
