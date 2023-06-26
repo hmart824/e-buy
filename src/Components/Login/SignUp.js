@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState , useEffect} from 'react';
 import Style from './Login.module.css';
 import { useContextValue } from '../../Context/CustomContext';
 import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
     const navigate = useNavigate();
-    const {clearInputs , onChangeHandler , signUpWithEmailAndPassword , toast} = useContextValue();
+    const {clearInputs , onChangeHandler , signUpWithEmailAndPassword , toast , user} = useContextValue();
     const [signUpData, setSignUpData] = useState({});
 
     const handleSubmit = (e)=>{
@@ -16,8 +16,14 @@ const SignUp = () => {
         }
         signUpWithEmailAndPassword(signUpData);
         clearInputs('sign-up-inp');
-        navigate('/');
     }
+
+    useEffect(() => {
+        if(user){
+          console.log('active')
+          navigate('/');
+        }
+      }, [user])
   return (
     <div className={Style.container}>
         <form>

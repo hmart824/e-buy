@@ -5,7 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 
 import db , { auth } from '../Firbase/Firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword , updateProfile , onAuthStateChanged , signOut} from "firebase/auth";
-import { collection , addDoc, getDocs , setDoc , doc} from 'firebase/firestore';
+import { collection , addDoc, getDocs , setDoc , doc, updateDoc , serverTimestamp} from 'firebase/firestore';
 
 const customContext = createContext();
 
@@ -68,7 +68,6 @@ function CustomContext({children}) {
         })
         .catch((error) => {
             const errorMessage = error.message;
-            console.log(errorMessage);
             toast.error('Invalid Credentials!!')
             dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
         });
@@ -77,14 +76,13 @@ function CustomContext({children}) {
 
     const signIn = (data)=>{
         dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
-        const message = signInWithEmailAndPassword(auth , data.email , data.password)
+        signInWithEmailAndPassword(auth , data.email , data.password)
         .then((userCredential)=>{
             const currentUser = {
                 displayName: userCredential.user.displayName,
                 email: userCredential.user.email,
                 photoURL: userCredential.user.photoURL,
-                userId: userCredential.user.uid,
-                password: data.password
+                userId: userCredential.user.uid
             }
             dispatch({
                 type: 'SET_DATA' , 
@@ -98,9 +96,7 @@ function CustomContext({children}) {
             const errorMessage = error.message;
             toast.error('Invalid Credentials!!')
             dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
-            return errorMessage;
         });
-        return message;
     }
 
     const authentication = ()=>{
@@ -172,7 +168,6 @@ function CustomContext({children}) {
     }
 
     const fetchProducts = async()=>{
-        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         const res = await axios.get('https://fakestoreapi.com/products');
         dispatch({
             type: 'SET_DATA',
@@ -181,13 +176,24 @@ function CustomContext({children}) {
                 value: res.data
             }
         })
-        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
     };
 
-    const addToCart = (product)=>{
+    const fetchcartProducts = async()=>{
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        try{
+            
+        }catch(error){
+            console.log(error)
+        }
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+    };
+
+    const addToCart = async (product)=>{
         let index = state.cart.findIndex((el)=> el.id === product.id);
         if(index > -1){
             state.cart[index].qty++;
+            const productRef = doc(db , 'cart' , state.user.email , 'list' , state.cart[index].doc_id);
+            await updateDoc(productRef, {qty:  state.cart[index].qty});
             dispatch({
                 type: 'SET_DATA',
                 payload: {
@@ -196,11 +202,14 @@ function CustomContext({children}) {
                 }
             });
         }else{
+            let modifiedProduct = {...product , in_cart: true , qty: 1 , timestamp: serverTimestamp()}
+            const productRef = collection(db , 'cart' , state.user.email , 'list');
+            const docRef = await addDoc(productRef , modifiedProduct)
             dispatch({
                 type: 'ADD_DATA',
                 payload: {
                     state: 'cart',
-                    value: {...product , in_cart: true , qty: 1}
+                    value: {...modifiedProduct , doc_id: docRef.id}
                 }
             });
         }
@@ -327,7 +336,7 @@ function CustomContext({children}) {
         user: state.user,
         signout,
         loading: state.loading,
-        signIn
+        signIn,
     }}>
         <ToastContainer
             position="top-right"
