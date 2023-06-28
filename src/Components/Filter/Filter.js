@@ -3,8 +3,7 @@ import Style from './Filter.module.css'
 import { useContextValue } from '../../Context/CustomContext';
 
 function Filter() {
-  const {getUniqueData , products , category ,filterProducts} = useContextValue();
-  const [price, setPrice] = useState(75000);
+  const {getUniqueData , products , category ,setFilterQuery , price} = useContextValue();
   const [selectedCategory, setSelectedCategory] = useState([]);
   
   //get the unique category
@@ -12,9 +11,10 @@ function Filter() {
     getUniqueData(products , 'category');
   }, []);
 
-  //caal the filter function
+  
+
   useEffect(() => {
-    filterProducts(selectedCategory);
+    setFilterQuery({selectedCategory , type: 'category'});
   }, [selectedCategory]);
 
   //push the selected category to selectedCategory array to filter
@@ -30,7 +30,7 @@ function Filter() {
   return (
     <form className={Style.formContainer}>
       <label htmlFor="price">Price : {price}</label>
-      <input type="range" id="price" name="price" min="1" max="100000" step="100" value={price} onChange={(e)=> setPrice(e.target.value)}/>
+      <input type="range" id="price" name="price" min="0" max="1000" step="10" value={price} onChange={(e)=> setFilterQuery(Number(e.target.value))}/>
       <div className={Style.category}>
         <h3>Category</h3>
         {category?.map((el , index)=>{

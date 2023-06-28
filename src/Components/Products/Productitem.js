@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import Style from './Productitem.module.css';
 import { AiFillStar } from "react-icons/ai";
 import { AiFillPlusCircle } from "react-icons/ai";
@@ -6,7 +6,25 @@ import { AiFillMinusCircle } from "react-icons/ai";
 import { useContextValue } from '../../Context/CustomContext';
 
 function Productitem(props) {
-  const {addToCart , removeProduct , handleDecrease ,handleIncrease} = useContextValue();
+  const {addToCart , removeProduct , handleDecrease ,handleIncrease } = useContextValue();
+  const [adding, setAdding] = useState(false);
+  const [removing, setRemoving] = useState(false);
+
+  const handleAddToCart = async()=>{
+    setAdding(true);
+    const added = await addToCart(props.product);
+    if(added){
+      setAdding(false)
+    }
+  }
+  const handleRemoveFromCart = async()=>{
+    setRemoving(true);
+    const removed = await removeProduct({id: props.product.id , doc_id: props.product.doc_id});
+    if(removed){
+      setRemoving(false);
+    }
+  }
+
   return (
     <div className={Style.item + " card"} style={props.product.in_cart && {height: '25rem'}}>
         <img src={props.product.image} className={Style.img + " card-img-top"} alt={props.product.title}/>
@@ -29,9 +47,11 @@ function Productitem(props) {
                
             <button className={(props.product.in_cart ? "btn-danger" : "btn-primary") + " btn position-absolute"} style={{bottom: '1rem'}} 
             onClick={()=>{
-              props.product.in_cart ? removeProduct(props.product.id) : addToCart(props.product)
-            }}>
-              {props.product.in_cart ? 'Remove From Cart' : 'Add to Cart'}
+              props.product.in_cart ? handleRemoveFromCart() : handleAddToCart()
+            }}
+            disabled={(adding || removing) ? true : ''}
+            >
+              {props.product.in_cart ? (removing ? 'Removing...' : 'Remove From Cart') : (adding ? "Adding..." : 'Add to Cart')}
             </button>
         </div>
     </div>

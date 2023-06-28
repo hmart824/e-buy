@@ -5,10 +5,34 @@ import "react-toastify/dist/ReactToastify.css";
 
 import db , { auth } from '../Firbase/Firebase';
 import { createUserWithEmailAndPassword, signInWithEmailAndPassword , updateProfile , onAuthStateChanged , signOut} from "firebase/auth";
-import { collection , addDoc, getDocs , setDoc , doc, updateDoc , serverTimestamp} from 'firebase/firestore';
+import { collection , addDoc, getDocs , setDoc , doc, updateDoc , query, orderBy, deleteDoc} from 'firebase/firestore';
 
 const customContext = createContext();
 
+const filterReducer = (filterState , action) =>{
+    const {payload} = action;
+    switch(action.type){
+        case "SET_PRICE":
+            return {
+                ...filterState,
+                price: payload
+            }
+        case "SET_CATEGORY":
+            return {
+                ...filterState,
+                category: payload
+            }
+        case "SET_SEARCHQUERY":
+            return {
+                ...filterState,
+                searchQuery: payload
+            }
+        default:
+            return filterState;
+    }
+}
+
+//reducer function
 const reducer = (state , action)=>{
     const {payload} = action;
     switch(action.type){
@@ -28,19 +52,30 @@ const reducer = (state , action)=>{
                 ...state,
                 [payload.state]: state[payload.state].filter((el)=> el.id !== payload.id)
             }
+        case "SET_FILTER":
+            return{
+                ...state,
+                ...state.filter,
+                [payload.state]: payload.value
+            }
         default: 
         return state;
     }
 }
 
+//custom hook for custom ontxt
 const useContextValue = ()=>{
     const context = useContext(customContext);
     return context;
 }
 
 function CustomContext({children}) {
-    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , filtered_products: [] , category: [] , user: null , loading: false});
+    const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , category: [] , user: null , loading: false , orders:[]});
 
+    const [filterState , filterDispatch] = useReducer(filterReducer , {price: 0, category: [] , searchQuery: ''});
+
+
+    //signup funtion
     const signUpWithEmailAndPassword = (data)=>{
         dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         createUserWithEmailAndPassword(auth , data.email , data.password)
@@ -56,6 +91,8 @@ function CustomContext({children}) {
                 userId: userCredential.user.uid,
                 password: data.password
             }
+
+            //store user info in db
             const userDocRef = doc(db , "users" , currentUser.email);
             setDoc(userDocRef , currentUser);
             dispatch({
@@ -74,6 +111,7 @@ function CustomContext({children}) {
         
     }
 
+    //signin funtion
     const signIn = (data)=>{
         dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         signInWithEmailAndPassword(auth , data.email , data.password)
@@ -99,6 +137,7 @@ function CustomContext({children}) {
         });
     }
 
+    //check authentication whether a user signed in or not
     const authentication = ()=>{
         dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         onAuthStateChanged(auth, (currentUser) => {
@@ -124,6 +163,7 @@ function CustomContext({children}) {
     
     }
 
+    //sign out function
     const signout = ()=>{
         signOut(auth)
         .then(()=>{
@@ -139,34 +179,50 @@ function CustomContext({children}) {
         .catch((err)=>{alert(err.message)})
       }
 
-    const filterProducts = (query)=>{
-        let temp = [...state.products];
-        let tempProd;
-
-        if(typeof query === 'object'){
-                tempProd = query?.map((cat)=>{
-                let filterTemp = temp.filter((el)=> el.category === cat)
-                return filterTemp;
+    //filter fuction
+    const setFilterQuery = (query)=>{
+        if(typeof query === 'object' && query.type === 'category'){
+            filterDispatch({
+                type: "SET_CATEGORY",
+                payload: query.selectedCategory
             })
-            tempProd = tempProd.flat()
         }
 
         if(typeof query === 'string'){
-            // state.filtered_products.length > 0 ?
-            // temp = [...state.filtered_products] :
-            // temp = [...state.products]
-            tempProd = temp.filter((el)=> el.title.toLowerCase().includes(query));
+            filterDispatch({
+                type: "SET_SEARCHQUERY",
+                payload: query
+            })
         }
 
-        dispatch({
-            type: 'SET_DATA',
-            payload: {
-                state: 'filtered_products',
-                value: tempProd
-            }
-        })
+        if(typeof query === 'number'){
+            filterDispatch({
+                type: "SET_PRICE",
+                payload: query
+            })
+        }
     }
 
+    const transformedProducts = ()=>{
+        let { price , category , searchQuery} = filterState;
+        let filteredProducts = [...state.products];
+        if(price){
+            filteredProducts = filteredProducts.filter((el)=> Number(el.price) <= filterState.price);
+        }
+        if(category.length > 0){
+            let temp = filterState.category.map((cat)=>{
+                let tempProds = filteredProducts.filter((el)=> el.category === cat);
+                return tempProds;
+            })
+            filteredProducts = temp.flat();
+        }
+        if(searchQuery){
+            filteredProducts = filteredProducts.filter((el)=> el.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        }
+        return filteredProducts;
+    }
+
+    //fecth products from api
     const fetchProducts = async()=>{
         const res = await axios.get('https://fakestoreapi.com/products');
         dispatch({
@@ -178,20 +234,58 @@ function CustomContext({children}) {
         })
     };
 
+    //fetch cart products from db
     const fetchcartProducts = async()=>{
-        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         try{
-            
+            const q = query(collection(db , 'cart' , state.user.email , 'list') , orderBy('timestamp' , 'desc'));
+            const querySnapshot = await getDocs(q);
+            const cartProducts = querySnapshot.docs.map((doc)=>{
+                return {
+                    doc_id: doc.id,
+                    ...doc.data()
+                }
+            });
+            dispatch({
+                type: 'SET_DATA',
+                payload: {
+                    state: 'cart',
+                    value: cartProducts
+                }
+            });
         }catch(error){
             console.log(error)
         }
-        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+    };
+    const fetchOrders = async()=>{
+        try{
+            const q = query(collection(db , 'orders' , state.user.email , 'list'));
+            const querySnapshot = await getDocs(q);
+            const orders = querySnapshot.docs.map((doc)=>{
+                return {
+                    doc_id: doc.id,
+                    ...doc.data()
+                }
+            });
+            dispatch({
+                type: 'SET_DATA',
+                payload: {
+                    state: 'orders',
+                    value: orders
+                }
+            });
+        }catch(error){
+            console.log(error)
+        }
     };
 
+    //add to cart function
     const addToCart = async (product)=>{
         let index = state.cart.findIndex((el)=> el.id === product.id);
         if(index > -1){
             state.cart[index].qty++;
+
+            //update th prouct if already present in db
             const productRef = doc(db , 'cart' , state.user.email , 'list' , state.cart[index].doc_id);
             await updateDoc(productRef, {qty:  state.cart[index].qty});
             dispatch({
@@ -201,8 +295,11 @@ function CustomContext({children}) {
                     value: state.cart
                 }
             });
+            dispatch({type: "SET_DATA" , payload: {state: 'isAdding' , value: false}});
         }else{
-            let modifiedProduct = {...product , in_cart: true , qty: 1 , timestamp: serverTimestamp()}
+            let modifiedProduct = {...product , in_cart: true , qty: 1 , timestamp: Date.now()}
+
+            //add the product in db
             const productRef = collection(db , 'cart' , state.user.email , 'list');
             const docRef = await addDoc(productRef , modifiedProduct)
             dispatch({
@@ -214,9 +311,12 @@ function CustomContext({children}) {
             });
         }
         toast.success('Added to cart successfully.')
+        return true;
     }
 
-    const removeProduct = (id)=>{
+    //remove product fron cart
+    const removeProduct = async({id , doc_id})=>{
+        await deleteDoc(doc(db , 'cart' , state.user.email , 'list' , doc_id));
         dispatch({
             type: 'REMOVE_DATA',
             payload:{
@@ -224,13 +324,17 @@ function CustomContext({children}) {
                 id
             }
         })
-        toast.error('Item Removed successfully.')
+        toast.error('Item Removed successfully.');
+        return true;
     }
 
-    const handleIncrease = (id)=>{
+    //increase qty of product in cart
+    const handleIncrease = async(id)=>{
         let index = state.cart.findIndex((el)=> el.id === id);
         if(index !== -1){
             state.cart[index].qty++;
+            const productRef = doc(db , 'cart' , state.user.email , 'list' , state.cart[index].doc_id);
+            await updateDoc(productRef, {qty:  state.cart[index].qty});
             dispatch({
                 type: 'SET_DATA',
                 payload: {
@@ -248,10 +352,14 @@ function CustomContext({children}) {
         }
         return;
     }
-    const handleDecrease = (id)=>{
+
+    //decrease qty of product in cart
+    const handleDecrease = async(id)=>{
         let index = state.cart.findIndex((el)=> el.id === id);
         if(index !== -1){
             state.cart[index].qty--;
+            const productRef = doc(db , 'cart' , state.user.email , 'list' , state.cart[index].doc_id);
+            await updateDoc(productRef, {qty:  state.cart[index].qty});
             dispatch({
                 type: 'TOTAL',
                 payload:{
@@ -260,7 +368,9 @@ function CustomContext({children}) {
                 }
             })
             if(state.cart[index].qty === 0){
+                await deleteDoc(doc(db , 'cart' , state.user.email , 'list' , state.cart[index].doc_id));
                 state.cart.splice(index , 1);
+                toast.error('Item removed.')
             }
             dispatch({
                 type: 'SET_DATA',
@@ -274,6 +384,7 @@ function CustomContext({children}) {
 
     }
 
+    //alculate the total price in cart
     const calcTotalPrice = (array)=>{
         const total = array.reduce((accum , currVal)=>{
             let {price , qty} = currVal;
@@ -288,6 +399,7 @@ function CustomContext({children}) {
         })
     }
 
+    //used to get all unique data from an array
     const getUniqueData = (itemArray , property)=>{
         let data = itemArray.map((item)=>{
             return item[property];
@@ -302,10 +414,26 @@ function CustomContext({children}) {
         })
     }
 
-    const onChangeHandler = (target ,state, setState)=>{
+    const onPurchase = async()=> {
+        let purchaseObj = {
+            purchased_on: new Date(),
+            products: state.cart
+        }
+        state.cart.forEach(async(product)=>{
+            await deleteDoc(doc(db , 'cart' , state.user.email , 'list' , product.doc_id));
+        })
+        const orderRef = collection(db , 'orders' , state.user.email , 'list');
+        await addDoc(orderRef , purchaseObj);
+        dispatch({type: "SET_DATA" , payload: {state: 'cart' , value: []}});
+        dispatch({type: "ADD_DATA" , payload: {state: 'purchasedProducts' , value: purchaseObj}});
+    }
+
+    //input on change handler
+    const onChangeHandler = (target ,state, setState) => {
         setState({...state , [target.name] : target.value});
     }
 
+    //clear the inputs with same class name
     const clearInputs = (className)=>{
         let lists = document.getElementsByClassName(className);
         Array.from(lists).forEach((el)=>{
@@ -327,8 +455,7 @@ function CustomContext({children}) {
         handleDecrease,
         getUniqueData,
         category: state.category,
-        filterProducts,
-        filtered_products: state.filtered_products,
+        setFilterQuery,
         clearInputs,
         onChangeHandler,
         signUpWithEmailAndPassword,
@@ -337,6 +464,12 @@ function CustomContext({children}) {
         signout,
         loading: state.loading,
         signIn,
+        fetchcartProducts,
+        price: filterState.price,
+        transformedProducts,
+        onPurchase,
+        orders: state.orders,
+        fetchOrders
     }}>
         <ToastContainer
             position="top-right"

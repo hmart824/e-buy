@@ -6,18 +6,17 @@ import { FiFilter } from "react-icons/fi";
 import Filter from '../Filter/Filter';
 
 function Home() {
-    const {products , fetchProducts , filtered_products} = useContextValue();
+    const { fetchProducts , transformedProducts , fetchcartProducts , user} = useContextValue();
     const [showFilter, setShowFilter] = useState(false);
 
     //call the fetch products function
     useEffect(() => {
         fetchProducts();
+        if(user){
+            fetchcartProducts();
+        }
     }, []);
 
-
-    const filteredItem = filtered_products?.map((product)=>{
-        return <Productitem key={product.id} product={product}/>
-    })
 
   return (
     <div className={Style.container}>
@@ -29,7 +28,7 @@ function Home() {
         </button>
         {showFilter && <Filter/>}
         
-        {filteredItem.length > 0 ? (filteredItem) : products.map((product)=>{
+        {transformedProducts().map((product)=>{
             return <Productitem key={product.id} product={product}/>
         })}
     </div>
