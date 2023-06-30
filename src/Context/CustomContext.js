@@ -3,67 +3,16 @@ import axios from'axios';
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 
+import { reducer , filterReducer } from '../Reducer/Reducers';
+
 import db , { auth } from '../Firbase/Firebase';
-import { createUserWithEmailAndPassword, signInWithEmailAndPassword , updateProfile , onAuthStateChanged , signOut} from "firebase/auth";
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword , updateProfile , onAuthStateChanged , signOut, GoogleAuthProvider, signInWithPopup} from "firebase/auth";
 import { collection , addDoc, getDocs , setDoc , doc, updateDoc , query, orderBy, deleteDoc} from 'firebase/firestore';
+
 
 const customContext = createContext();
 
-const filterReducer = (filterState , action) =>{
-    const {payload} = action;
-    switch(action.type){
-        case "SET_PRICE":
-            return {
-                ...filterState,
-                price: payload
-            }
-        case "SET_CATEGORY":
-            return {
-                ...filterState,
-                category: payload
-            }
-        case "SET_SEARCHQUERY":
-            return {
-                ...filterState,
-                searchQuery: payload
-            }
-        default:
-            return filterState;
-    }
-}
-
-//reducer function
-const reducer = (state , action)=>{
-    const {payload} = action;
-    switch(action.type){
-        case "TOTAL":
-        case "SET_DATA":
-            return {
-                ...state,
-                [payload.state]: payload.value
-            };
-        case "ADD_DATA":
-            return{
-                ...state,
-                [payload.state]: [payload.value , ...state[payload.state]]
-            }
-        case "REMOVE_DATA":
-            return{
-                ...state,
-                [payload.state]: state[payload.state].filter((el)=> el.id !== payload.id)
-            }
-        case "SET_FILTER":
-            return{
-                ...state,
-                ...state.filter,
-                [payload.state]: payload.value
-            }
-        default: 
-        return state;
-    }
-}
-
-//custom hook for custom ontxt
+//custom hook for custom context
 const useContextValue = ()=>{
     const context = useContext(customContext);
     return context;
@@ -72,7 +21,7 @@ const useContextValue = ()=>{
 function CustomContext({children}) {
     const [state, dispatch] = useReducer(reducer, {products: [] , cart: [] , total: 0 , category: [] , user: null , loading: false , orders:[]});
 
-    const [filterState , filterDispatch] = useReducer(filterReducer , {price: 0, category: [] , searchQuery: ''});
+    const [filterState , filterDispatch] = useReducer(filterReducer , {price: 1000, category: [] , searchQuery: ''});
 
 
     //signup funtion
@@ -109,6 +58,35 @@ function CustomContext({children}) {
             dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
         });
         
+    }
+
+    const signInWithGoogle = ()=>{
+        dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
+        const provider = new GoogleAuthProvider();
+        signInWithPopup(auth , provider)
+        .then((userCredential)=>{
+            const currentUser = {
+                displayName: userCredential.user.displayName,
+                email: userCredential.user.email,
+                photoURL: userCredential.user.photoURL,
+                userId: userCredential.user.uid
+            }
+            //store user info in db
+            const userDocRef = doc(db , "users" , currentUser.email);
+            setDoc(userDocRef , currentUser);
+            dispatch({
+                type: 'SET_DATA' , 
+                payload: {
+                  state: 'user',
+                  value: currentUser
+                }});
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+        })
+        .catch((error) => {
+            const errorMessage = error.message;
+            toast.error('Invalid Credentials!!');
+            dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: false}});
+        })
     }
 
     //signin funtion
@@ -236,7 +214,6 @@ function CustomContext({children}) {
 
     //fetch cart products from db
     const fetchcartProducts = async()=>{
-        // dispatch({type: 'SET_DATA' , payload: {state: 'loading' , value: true}});
         try{
             const q = query(collection(db , 'cart' , state.user.email , 'list') , orderBy('timestamp' , 'desc'));
             const querySnapshot = await getDocs(q);
@@ -416,8 +393,9 @@ function CustomContext({children}) {
 
     const onPurchase = async()=> {
         let purchaseObj = {
-            purchased_on: new Date(),
-            products: state.cart
+            purchased_on: Date.now(),
+            products: state.cart,
+            total_price: state.total
         }
         state.cart.forEach(async(product)=>{
             await deleteDoc(doc(db , 'cart' , state.user.email , 'list' , product.doc_id));
@@ -425,21 +403,11 @@ function CustomContext({children}) {
         const orderRef = collection(db , 'orders' , state.user.email , 'list');
         await addDoc(orderRef , purchaseObj);
         dispatch({type: "SET_DATA" , payload: {state: 'cart' , value: []}});
-        dispatch({type: "ADD_DATA" , payload: {state: 'purchasedProducts' , value: purchaseObj}});
+        dispatch({type: "ADD_DATA" , payload: {state: 'orders' , value: purchaseObj}});
+        return true;
     }
 
-    //input on change handler
-    const onChangeHandler = (target ,state, setState) => {
-        setState({...state , [target.name] : target.value});
-    }
-
-    //clear the inputs with same class name
-    const clearInputs = (className)=>{
-        let lists = document.getElementsByClassName(className);
-        Array.from(lists).forEach((el)=>{
-            el.value = '';
-        })
-    }
+    
 
   return (
     <customContext.Provider value={{
@@ -456,9 +424,8 @@ function CustomContext({children}) {
         getUniqueData,
         category: state.category,
         setFilterQuery,
-        clearInputs,
-        onChangeHandler,
         signUpWithEmailAndPassword,
+        signInWithGoogle,
         authentication,
         user: state.user,
         signout,

@@ -1,11 +1,12 @@
 import React, { useState , useEffect} from 'react';
 import Style from './Login.module.css';
+import { onChangeHandler , clearInputs } from '../../Utils/util_functions';
 import { useContextValue } from '../../Context/CustomContext';
 import { useNavigate } from 'react-router-dom';
 
 const SignUp = () => {
     const navigate = useNavigate();
-    const {clearInputs , onChangeHandler , signUpWithEmailAndPassword , toast , user} = useContextValue();
+    const { signUpWithEmailAndPassword , toast , user , signInWithGoogle } = useContextValue();
     const [signUpData, setSignUpData] = useState({});
 
     const handleSubmit = (e)=>{
@@ -32,7 +33,7 @@ const SignUp = () => {
             <input type="password" className='sign-up-inp' name="password" id="password" placeholder='Enter Password' onChange={(e)=> onChangeHandler(e.target , signUpData , setSignUpData)} required/>
             <input type="password" className='sign-up-inp' name="confirm_password" id="confirm_password" placeholder='Enter Confirm Password' onChange={(e)=> onChangeHandler(e.target , signUpData , setSignUpData)} required/>
             <button type="submit" className="btn btn-sm btn-outline-success" onClick={handleSubmit}>Sign Up</button>
-            <button type="button" className="btn btn-sm btn-outline-success">Sign In With Google</button>
+            <button type="button" className="btn btn-sm btn-outline-success" onClick={signInWithGoogle}>Sign In With Google</button>
         </form>
     </div>
   )

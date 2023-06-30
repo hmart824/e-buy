@@ -30,7 +30,7 @@ function Filter() {
   return (
     <form className={Style.formContainer}>
       <label htmlFor="price">Price : {price}</label>
-      <input type="range" id="price" name="price" min="0" max="1000" step="10" value={price} onChange={(e)=> setFilterQuery(Number(e.target.value))}/>
+      <input type="range" id="price" name="price" min="1" max="1000" step="10" value={price} onChange={(e)=> setFilterQuery(Number(e.target.value))}/>
       <div className={Style.category}>
         <h3>Category</h3>
         {category?.map((el , index)=>{

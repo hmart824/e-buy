@@ -6,7 +6,7 @@ import { FiFilter } from "react-icons/fi";
 import Filter from '../Filter/Filter';
 
 function Home() {
-    const { fetchProducts , transformedProducts , fetchcartProducts , user} = useContextValue();
+    const { fetchProducts , transformedProducts , fetchcartProducts , user , fetchOrders} = useContextValue();
     const [showFilter, setShowFilter] = useState(false);
 
     //call the fetch products function
@@ -14,6 +14,7 @@ function Home() {
         fetchProducts();
         if(user){
             fetchcartProducts();
+            fetchOrders();
         }
     }, []);
 

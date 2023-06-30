@@ -1,18 +1,17 @@
-import React , {useEffect} from 'react';
+import React  from 'react';
 import { useContextValue } from '../../Context/CustomContext';
+import { getDate } from '../../Utils/util_functions';
 
 function Myorders() {
-  const { orders , fetchOrders } = useContextValue();
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  const { orders , user } = useContextValue();
   
   return (
     <div className="container text-center">
-      <h1 className='my-2'>Your Orders</h1>
-      {orders.map((order)=>{
-        return <div className="order">
-                  <h3 className='my-1'>Yours Order on:- {order.purchased_on}</h3>
+      <h1 className='my-2'>{user.displayName}'s Orders</h1>
+      {orders.length < 1 && <h3>No Orders Right Now</h3>}
+      {orders.map((order , index)=>{
+        return <div key={index} className="order my-4">
+                  <h3 className='my-2'>Yours Order on:- {getDate(order.purchased_on)}</h3>
                     <table className="table table-bordered my-1">
                       <thead>
                         <tr>
@@ -23,33 +22,18 @@ function Myorders() {
                         </tr>
                       </thead>
                       <tbody className="table-group-divider">
-                        <tr>
-                          <td>1</td>
-                          <td>Mark</td>
-                          <td>Otto</td>
-                          <td>@mdo</td>
-                        </tr>
-                        <tr>
-                          <td>1</td>
-                          <td>Jacob</td>
-                          <td>Thornton</td>
-                          <td>@fat</td>
-                        </tr>
-                        <tr>
-                          <td>1</td>
-                          <td>Jacob</td>
-                          <td>Thornton</td>
-                          <td>@fat</td>
-                        </tr>
-                        <tr>
-                          <td>1</td>
-                          <td>Jacob</td>
-                          <td>Thornton</td>
-                          <td>@fat</td>
-                        </tr>
+                        {order.products.map((product)=>{
+                          return <tr key={product.id}>
+                                    <td>{product.title.slice(0,32)}</td>
+                                    <td>{product.price}</td>
+                                    <td>{product.qty}</td>
+                                    <td>{product.price * product.qty}</td>
+                                  </tr>
+                        })}
+                        
                         <tr>
                           <td colSpan={3}></td>
-                          <td>12000</td>
+                          <td className='fw-bold'>$ {order.total_price.toFixed(2)}</td>
                         </tr>
                         
                       </tbody>
