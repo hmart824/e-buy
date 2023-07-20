@@ -21,3 +21,11 @@ export const getDate = (date)=>{
     }
     return d.toLocaleString('default' , opts);
   }
+
+ export const getUniqueData = (itemArray , property)=>{
+    let data = itemArray.map((item)=>{
+        return item[property];
+    })
+    data = [...new Set(data)];
+    return data;
+  }

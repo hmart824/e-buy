@@ -1,28 +1,37 @@
 import React, { useState } from 'react';
 import Style from './Productitem.module.css';
+import { useDispatch } from 'react-redux';
 import { AiFillStar } from "react-icons/ai";
 import { AiFillPlusCircle } from "react-icons/ai";
 import { AiFillMinusCircle } from "react-icons/ai";
-import { useContextValue } from '../../Context/CustomContext';
+import { 
+  addToCartAsync , 
+  removeFromCartAsync , 
+  handleIncreaseAsync, 
+  handleDecreaseAsync 
+} from '../../Redux/Reducers/CartReducer';
+import { toast } from 'react-toastify';
 
 function Productitem(props) {
-  const {addToCart , removeProduct , handleDecrease ,handleIncrease } = useContextValue();
+  const dispatch = useDispatch();
   const [adding, setAdding] = useState(false);
   const [removing, setRemoving] = useState(false);
 
-  const handleAddToCart = async()=>{
+  const handleAddToCart = ()=>{
     setAdding(true);
-    const added = await addToCart(props.product);
-    if(added){
-      setAdding(false)
-    }
+    dispatch(addToCartAsync(props.product))
+    .then(()=>{
+      toast.success("Item added to cart successfully.");
+      setAdding(false);
+    })
   }
   const handleRemoveFromCart = async()=>{
     setRemoving(true);
-    const removed = await removeProduct({id: props.product.id , doc_id: props.product.doc_id});
-    if(removed){
+    dispatch(removeFromCartAsync(props.product.doc_id))
+    .then(()=>{
+      toast.warning("Item removed from cart successfully.");
       setRemoving(false);
-    }
+    })
   }
 
   return (
@@ -35,9 +44,9 @@ function Productitem(props) {
               ${props.product.price} 
               {props.product.in_cart ? 
                 <span className='mx-4'>
-                  <AiFillMinusCircle onClick={()=> handleDecrease(props.product.id)} className='mx-2' style={{cursor: 'pointer'}}/>
+                  <AiFillMinusCircle onClick={()=> dispatch(handleDecreaseAsync(props.product.id))} className='mx-2' style={{cursor: 'pointer'}}/>
                    {props.product.qty} 
-                  <AiFillPlusCircle onClick={()=> handleIncrease(props.product.id)} className='mx-2' style={{cursor: 'pointer'}}/>
+                  <AiFillPlusCircle onClick={()=> dispatch(handleIncreaseAsync(props.product.id))} className='mx-2' style={{cursor: 'pointer'}}/>
                 </span> :
                 <span className='mx-3' style={{fontSize: '1rem'}}>
                   {props.product.rating.rate} <AiFillStar style={{color:'#ffff00'}}/>

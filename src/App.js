@@ -1,7 +1,7 @@
-
+import { useSelector , useDispatch } from 'react-redux';
 import { useEffect } from 'react';
-import { useContextValue } from './Context/CustomContext';
 import { createBrowserRouter , RouterProvider , Navigate} from 'react-router-dom';
+import { userSelector , authentication } from './Redux/Reducers/UserReducer';
 import './App.css';
 
 import Navbar from './Components/Navbar/Navbar';
@@ -11,9 +11,12 @@ import Cart from './Components/Cart/Cart';
 import Login from './Components/Login/Login';
 import SignUp from './Components/Login/SignUp';
 
+
+
 function App() {
 
-  const { authentication , user} = useContextValue();
+  const {user} = useSelector(userSelector);
+  const dispatch = useDispatch();
 
   const router = createBrowserRouter([
     { path: '/', 
@@ -29,7 +32,7 @@ function App() {
   ])
 
   useEffect(() => {
-    authentication();
+    dispatch(authentication());
    },[])
   
 

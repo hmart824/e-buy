@@ -1,13 +1,18 @@
 import React from 'react';
 import { Link , Outlet , useNavigate , useLocation } from 'react-router-dom';
-import { useContextValue } from '../../Context/CustomContext';
 import Loader from '../Loader/Loader';
 import { FaHome } from "react-icons/fa";
 import { FaShoppingCart } from "react-icons/fa";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import { BsFillClipboard2CheckFill } from "react-icons/bs";
+import { useDispatch, useSelector } from 'react-redux';
+import { userSelector , signout } from '../../Redux/Reducers/UserReducer';
+import { filterActions } from '../../Redux/Reducers/FilterReducers';
 
 function Navbar() {
-    const { user , signout , loading , setFilterQuery} = useContextValue();
+    const { user , loading } = useSelector(userSelector);
+    const dispatch = useDispatch();
     const navigate = useNavigate();
     const location = useLocation();
   return (
@@ -32,21 +37,38 @@ function Navbar() {
                 </ul>
                 {location.pathname === '/' && <form className="d-flex" role="search">
                     <input className="form-control me-2" type="search" placeholder="Search by Name"
-                        onChange={(e)=>{setFilterQuery(e.target.value)}}
+                        onChange={(e)=>{dispatch(filterActions.setSearchQuery(e.target.value))}}
                     />
                 </form>}
                 <button type="button" className="btn btn-sm btn-outline-success"
                 onClick={()=> {
-                    user ? signout() : navigate('/signin')
+                    user ? dispatch(signout()).then(()=> toast.success("Loged out successfully!")) : navigate('/signin')
                 }}>
                     {user ? 'Sign Out' : "Sign In"}
                 </button>
             </div>
         </div>
     </nav>
-    {loading ? <Loader/> : <Outlet/>}
+    {loading ? 
+        <Loader/> : 
+        <>
+            <ToastContainer
+            position="top-right"
+            autoClose={3000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+            />
+            <Outlet/>
+        </>
+    }
     </>
   )
 }
 
-export default Navbar
+export default Navbar;

@@ -1,22 +1,50 @@
 import React, { useEffect, useState } from 'react';
 import Style from './Home.module.css';
 import Productitem from '../Products/Productitem';
-import { useContextValue } from '../../Context/CustomContext';
 import { FiFilter } from "react-icons/fi";
 import Filter from '../Filter/Filter';
+import { useDispatch , useSelector } from 'react-redux';
+import { getProducts, productsSelector , productsActions } from '../../Redux/Reducers/ProductsReducer';
+import { userSelector } from '../../Redux/Reducers/UserReducer';
+import { getCartProducts } from '../../Redux/Reducers/CartReducer';
+import { getOrders } from '../../Redux/Reducers/OrdersReducer';
+import { getUniqueData } from '../../Utils/util_functions';
+import { filterSelector } from '../../Redux/Reducers/FilterReducers';
 
 function Home() {
-    const { fetchProducts , transformedProducts , fetchcartProducts , user , fetchOrders} = useContextValue();
+    const { products } = useSelector(productsSelector);
+    const { user } = useSelector(userSelector);
+    const { price , filterCategory , searchQuery } = useSelector(filterSelector);
     const [showFilter, setShowFilter] = useState(false);
+    const dispatch = useDispatch();
 
     //call the fetch products function
     useEffect(() => {
-        fetchProducts();
+        dispatch(getProducts());
+        dispatch(productsActions.getCategory(getUniqueData(products , 'category')));
         if(user){
-            fetchcartProducts();
-            fetchOrders();
+            dispatch(getCartProducts());
+            dispatch(getOrders());
         }
     }, []);
+
+    const transformedProducts = ()=>{
+        let filteredProducts = [...products];
+        if(price){
+            filteredProducts = filteredProducts.filter((el)=> Number(el.price) <= price);
+        }
+        if(filterCategory.length > 0){
+            let temp = filterCategory.map((cat)=>{
+                let tempProds = filteredProducts.filter((el)=> el.category === cat);
+                return tempProds;
+            })
+            filteredProducts = temp.flat();
+        }
+        if(searchQuery){
+            filteredProducts = filteredProducts.filter((el)=> el.title.toLowerCase().includes(searchQuery.toLowerCase()))
+        }
+        return filteredProducts;
+    };
 
 
   return (

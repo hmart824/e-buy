@@ -1,21 +1,24 @@
 import React, { useState , useEffect} from 'react';
 import Style from './Login.module.css';
 import { onChangeHandler , clearInputs } from '../../Utils/util_functions';
-import { useContextValue } from '../../Context/CustomContext';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { userSelector , signInWithGoogle , signUpWithEmailAndPassword } from '../../Redux/Reducers/UserReducer';
 
 const SignUp = () => {
     const navigate = useNavigate();
-    const { signUpWithEmailAndPassword , toast , user , signInWithGoogle } = useContextValue();
+    const {user} = useSelector(userSelector);
+    const dispatch = useDispatch();
     const [signUpData, setSignUpData] = useState({});
 
     const handleSubmit = (e)=>{
         e.preventDefault();
         if(signUpData.password !== signUpData.confirm_password){
-            toast.error('Password and Confirm Password not match');
+            toast.error('Password and Confirm Password not matched');
             return;
         }
-        signUpWithEmailAndPassword(signUpData);
+        dispatch(signUpWithEmailAndPassword(signUpData));
         clearInputs('sign-up-inp');
     }
 
@@ -33,7 +36,7 @@ const SignUp = () => {
             <input type="password" className='sign-up-inp' name="password" id="password" placeholder='Enter Password' onChange={(e)=> onChangeHandler(e.target , signUpData , setSignUpData)} required/>
             <input type="password" className='sign-up-inp' name="confirm_password" id="confirm_password" placeholder='Enter Confirm Password' onChange={(e)=> onChangeHandler(e.target , signUpData , setSignUpData)} required/>
             <button type="submit" className="btn btn-sm btn-outline-success" onClick={handleSubmit}>Sign Up</button>
-            <button type="button" className="btn btn-sm btn-outline-success" onClick={signInWithGoogle}>Sign In With Google</button>
+            <button type="button" className="btn btn-sm btn-outline-success" onClick={()=> dispatch(signInWithGoogle())}>Sign In With Google</button>
         </form>
     </div>
   )

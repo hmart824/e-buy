@@ -1,9 +1,12 @@
 import React  from 'react';
-import { useContextValue } from '../../Context/CustomContext';
 import { getDate } from '../../Utils/util_functions';
+import { useSelector } from 'react-redux';
+import { userSelector } from '../../Redux/Reducers/UserReducer';
+import { ordersSelector } from '../../Redux/Reducers/OrdersReducer';
 
 function Myorders() {
-  const { orders , user } = useContextValue();
+  const {user} = useSelector(userSelector);
+  const {orders} = useSelector(ordersSelector);
   
   return (
     <div className="container text-center">
@@ -33,7 +36,7 @@ function Myorders() {
                         
                         <tr>
                           <td colSpan={3}></td>
-                          <td className='fw-bold'>$ {order.total_price.toFixed(2)}</td>
+                          <td className='fw-bold'>$ {order.total_price}</td>
                         </tr>
                         
                       </tbody>
@@ -44,4 +47,4 @@ function Myorders() {
   )
 }
 
-export default Myorders
+export default Myorders;
